@@ -27,15 +27,21 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/metar", get(fetch_metar_handler))
-        .route("/privacy", get(privacy));
+        .route("/privacy", get(privacy))
+        .route("/kaithhealth", get(health_check));
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .unwrap();
     println!("Server running on http://{}", addr);
     axum::serve(listener, app).await.unwrap();
+}
+
+// health check endpoint for Leapcell
+async fn health_check() -> &'static str {
+    "OK"
 }
 
 // serves the home page
