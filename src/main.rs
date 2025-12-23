@@ -22,14 +22,18 @@ struct MetarInfo {
     raw: String,
 }
 
-#[shuttle_runtime::main]
-async fn main() -> shuttle_axum::ShuttleAxum {
+#[tokio::main]
+async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/metar", get(fetch_metar_handler))
         .route("/privacy", get(privacy));
 
-    Ok(app.into())
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+        .await
+        .unwrap();
+    println!("Server running on http://localhost:3000");
+    axum::serve(listener, app).await.unwrap();
 }
 
 // serves the home page
