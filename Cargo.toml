@@ -1,0 +1,13 @@
+[package]
+name = "metarflow"
+version = "0.1.0"
+edition = "2025"
+description = "A simple METAR weather viewer"
+license = "GPL-3.0"
+repository = "https://github.com/Balionelis/metarflow"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
