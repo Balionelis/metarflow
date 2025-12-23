@@ -1,11 +1,17 @@
 use axum::{
-    extract::Query,
+    extract::{Query, State},
     http::StatusCode,
     response::{Html, IntoResponse},
     routing::get,
     Router,
 };
 use serde::Deserialize;
+use std::sync::Arc;
+
+#[derive(Clone)]
+struct AppState {
+    ga_id: Option<String>,
+}
 
 #[derive(Default)]
 struct MetarInfo {
@@ -24,10 +30,19 @@ struct MetarInfo {
 
 #[tokio::main]
 async fn main() {
+    let ga_id = std::env::var("GA_MEASUREMENT_ID").ok();
+    
+    if ga_id.is_some() {
+        println!("Google Analytics enabled");
+    }
+    
+    let state = Arc::new(AppState { ga_id });
+    
     let app = Router::new()
         .route("/", get(index))
         .route("/metar", get(fetch_metar_handler))
-        .route("/privacy", get(privacy));
+        .route("/privacy", get(privacy))
+        .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
@@ -36,14 +51,35 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+// generates google analytics script if GA_MEASUREMENT_ID is set
+fn get_ga_script(ga_id: &Option<String>) -> String {
+    match ga_id {
+        Some(id) => format!(
+            r#"<script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){{dataLayer.push(arguments);}}
+        gtag('js', new Date());
+        gtag('config', '{}');
+    </script>"#,
+            id, id
+        ),
+        None => String::new(),
+    }
+}
+
 // serves the home page
-async fn index() -> Html<&'static str> {
-    Html(include_str!("../templates/index.html"))
+async fn index(State(state): State<Arc<AppState>>) -> Html<String> {
+    let template = include_str!("../templates/index.html");
+    let html = template.replace("{{GA_SCRIPT}}", &get_ga_script(&state.ga_id));
+    Html(html)
 }
 
 // serves the privacy page
-async fn privacy() -> Html<&'static str> {
-    Html(include_str!("../templates/privacy.html"))
+async fn privacy(State(state): State<Arc<AppState>>) -> Html<String> {
+    let template = include_str!("../templates/privacy.html");
+    let html = template.replace("{{GA_SCRIPT}}", &get_ga_script(&state.ga_id));
+    Html(html)
 }
 
 #[derive(Deserialize)]
@@ -52,25 +88,29 @@ struct MetarQuery {
 }
 
 // handles the metar search request
-async fn fetch_metar_handler(Query(params): Query<MetarQuery>) -> impl IntoResponse {
+async fn fetch_metar_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<MetarQuery>,
+) -> impl IntoResponse {
     let icao = params.icao.trim().to_uppercase();
 
     if icao.len() != 4 {
-        return (
-            StatusCode::BAD_REQUEST,
-            Html(include_str!("../templates/error.html").replace("{{ERROR}}", "ICAO codes should be 4 characters (e.g., KJFK, EGLL, YSSY)")),
-        )
-            .into_response();
+        let html = include_str!("../templates/error.html")
+            .replace("{{ERROR}}", "ICAO codes should be 4 characters (e.g., KJFK, EGLL, YSSY)")
+            .replace("{{GA_SCRIPT}}", &get_ga_script(&state.ga_id));
+        return (StatusCode::BAD_REQUEST, Html(html)).into_response();
     }
 
     match fetch_metar(&icao).await {
         Ok(metar) => {
             let info = parse_metar(&metar, &icao);
-            let html = format_results_page(&info);
+            let html = format_results_page(&info, &state.ga_id);
             Html(html).into_response()
         }
         Err(e) => {
-            let html = include_str!("../templates/error.html").replace("{{ERROR}}", &format!("Error fetching METAR: {}", e));
+            let html = include_str!("../templates/error.html")
+                .replace("{{ERROR}}", &format!("Error fetching METAR: {}", e))
+                .replace("{{GA_SCRIPT}}", &get_ga_script(&state.ga_id));
             (StatusCode::INTERNAL_SERVER_ERROR, Html(html)).into_response()
         }
     }
@@ -508,7 +548,8 @@ fn celsius_to_fahrenheit(celsius: i32) -> i32 {
 }
 
 // generates the html results page
-fn format_results_page(info: &MetarInfo) -> String {
+fn format_results_page(info: &MetarInfo, ga_id: &Option<String>) -> String {
+    let ga_script = get_ga_script(ga_id);
     format!(
         r#"
 <!DOCTYPE html>
@@ -517,6 +558,7 @@ fn format_results_page(info: &MetarInfo) -> String {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>metarflow - METAR Weather Viewer</title>
+    {}
     <style>
         body {{
             font-family: monospace;
@@ -705,6 +747,7 @@ fn format_results_page(info: &MetarInfo) -> String {
 </body>
 </html>
         "#,
+        ga_script,
         info.station,
         if info.date_time.is_empty() { "N/A" } else { &info.date_time },
         if info.wind.is_empty() { "N/A" } else { &info.wind },
