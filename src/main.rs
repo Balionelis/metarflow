@@ -29,10 +29,12 @@ async fn main() {
         .route("/metar", get(fetch_metar_handler))
         .route("/privacy", get(privacy));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .unwrap();
-    println!("Server running on http://localhost:3000");
+    println!("Server running on http://{}", addr);
     axum::serve(listener, app).await.unwrap();
 }
 
