@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>metarflow - METAR Weather Viewer</title>
-    {{GA_SCRIPT}}
+    <link rel="icon" type="image/svg+xml" href="/metarflow.svg">
     <style>
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
         body {
             font-family: monospace;
             max-width: 800px;
             margin: 50px auto;
             padding: 20px;
             line-height: 1.6;
+            background-color: #fff;
+            color: #000;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         h1 {
             border-bottom: 1px solid #000;
             padding-bottom: 10px;
+        }
+        body.dark-mode h1 {
+            border-bottom-color: #e0e0e0;
         }
         .error {
             margin: 30px 0;
@@ -23,9 +35,16 @@
             border: 1px solid #000;
             background: #f5f5f5;
         }
+        body.dark-mode .error {
+            border-color: #e0e0e0;
+            background: #2a2a2a;
+        }
         a {
             color: #000;
             text-decoration: underline;
+        }
+        body.dark-mode a {
+            color: #e0e0e0;
         }
         form {
             margin: 30px 0;
@@ -40,6 +59,13 @@
             font-size: 14px;
             width: 200px;
             border: 1px solid #000;
+            background-color: #fff;
+            color: #000;
+        }
+        body.dark-mode input[type="text"] {
+            border-color: #e0e0e0;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
         }
         button {
             padding: 8px 16px;
@@ -47,10 +73,19 @@
             font-size: 14px;
             border: 1px solid #000;
             background: #fff;
+            color: #000;
             cursor: pointer;
+        }
+        body.dark-mode button {
+            border-color: #e0e0e0;
+            background: #2a2a2a;
+            color: #e0e0e0;
         }
         button:hover {
             background: #f0f0f0;
+        }
+        body.dark-mode button:hover {
+            background: #3a3a3a;
         }
         footer {
             margin-top: 50px;
@@ -59,15 +94,24 @@
             text-align: center;
             font-size: 12px;
         }
+        body.dark-mode footer {
+            border-top-color: #444;
+        }
         footer .disclaimer {
             color: #ff0000;
         }
         footer .credits {
             color: #000;
         }
+        body.dark-mode footer .credits {
+            color: #e0e0e0;
+        }
         footer a {
             color: #000;
             text-decoration: underline;
+        }
+        body.dark-mode footer a {
+            color: #e0e0e0;
         }
         .github-icon {
             width: 14px;
@@ -76,10 +120,46 @@
             margin-right: 4px;
             display: inline-block;
         }
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid #000;
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 12px;
+            cursor: pointer;
+            background: #fff;
+            color: #000;
+        }
+        body.dark-mode .dark-mode-toggle {
+            border-color: #e0e0e0;
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        .dark-mode-toggle:hover {
+            background: #f0f0f0;
+        }
+        body.dark-mode .dark-mode-toggle:hover {
+            background: #3a3a3a;
+        }
+        #home-link {
+            color: #000;
+        }
+        body.dark-mode #home-link {
+            color: #e0e0e0;
+        }
         @media (max-width: 600px) {
             body {
                 padding: 10px;
                 margin: 20px auto;
+            }
+            .dark-mode-toggle {
+                position: static;
+                display: block;
+                margin: 10px 0;
+                width: auto;
             }
             input[type="text"] {
                 width: 100%;
@@ -99,7 +179,8 @@
     </style>
 </head>
 <body>
-    <h1>metarflow</h1>
+    <button class="dark-mode-toggle" id="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+    <h1><a href="/" id="home-link" style="text-decoration: none; cursor: pointer;">metarflow</a></h1>
     <div class="error">
         <p>{{ERROR}}</p>
     </div>
@@ -112,6 +193,38 @@
         <p class="disclaimer">The information on this website is intended for educational purposes only. Not for operational use.</p>
         <p class="credits">Created by <a href="https://github.com/Balionelis/metarflow" target="_blank" rel="noopener noreferrer"><svg class="github-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Balionelis</a>. Licensed under <a href="https://github.com/Balionelis/metarflow/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0</a>. <a href="/privacy">Privacy</a>.</p>
     </footer>
+    <script>
+        // toggles dark mode
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark-mode');
+            const toggle = document.getElementById('dark-mode-toggle');
+            
+            if (isDark) {
+                localStorage.setItem('metarflow_dark_mode', 'true');
+                toggle.textContent = 'Light Mode';
+            } else {
+                localStorage.setItem('metarflow_dark_mode', 'false');
+                toggle.textContent = 'Dark Mode';
+            }
+        }
+        
+        // applies dark mode on page load
+        function initDarkMode() {
+            const savedMode = localStorage.getItem('metarflow_dark_mode');
+            const toggle = document.getElementById('dark-mode-toggle');
+            
+            if (savedMode === 'true') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('dark-mode');
+                toggle.textContent = 'Dark Mode';
+            }
+        }
+        
+        initDarkMode();
+    </script>
 </body>
 </html>
 

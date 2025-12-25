@@ -4,18 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>metarflow - METAR Weather Viewer</title>
-    {{GA_SCRIPT}}
+    <link rel="icon" type="image/svg+xml" href="/metarflow.svg">
     <style>
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
         body {
             font-family: monospace;
             max-width: 800px;
             margin: 50px auto;
             padding: 20px;
             line-height: 1.6;
+            background-color: #fff;
+            color: #000;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
         h1 {
             border-bottom: 1px solid #000;
             padding-bottom: 10px;
+        }
+        body.dark-mode h1 {
+            border-bottom-color: #e0e0e0;
+        }
+        #home-link {
+            color: #000;
+        }
+        body.dark-mode #home-link {
+            color: #e0e0e0;
         }
         form {
             margin: 30px 0;
@@ -30,6 +48,13 @@
             font-size: 14px;
             width: 200px;
             border: 1px solid #000;
+            background-color: #fff;
+            color: #000;
+        }
+        body.dark-mode input[type="text"] {
+            border-color: #e0e0e0;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
         }
         button {
             padding: 8px 16px;
@@ -37,10 +62,19 @@
             font-size: 14px;
             border: 1px solid #000;
             background: #fff;
+            color: #000;
             cursor: pointer;
         }
         button:hover {
             background: #f0f0f0;
+        }
+        body.dark-mode button {
+            border-color: #e0e0e0;
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        body.dark-mode button:hover {
+            background: #3a3a3a;
         }
         pre {
             background: #f5f5f5;
@@ -48,14 +82,30 @@
             border: 1px solid #000;
             overflow-x: auto;
         }
+        body.dark-mode pre {
+            background: #2a2a2a;
+            border-color: #e0e0e0;
+        }
         a {
             color: #000;
             text-decoration: underline;
+        }
+        body.dark-mode a {
+            color: #e0e0e0;
         }
         .info {
             margin-top: 20px;
             font-size: 12px;
             color: #666;
+        }
+        body.dark-mode .info {
+            color: #999;
+        }
+        .info-hint {
+            color: #999;
+        }
+        body.dark-mode .info-hint {
+            color: #bbb;
         }
         footer {
             margin-top: 50px;
@@ -64,15 +114,24 @@
             text-align: center;
             font-size: 12px;
         }
+        body.dark-mode footer {
+            border-top-color: #444;
+        }
         footer .disclaimer {
             color: #ff0000;
         }
         footer .credits {
             color: #000;
         }
+        body.dark-mode footer .credits {
+            color: #e0e0e0;
+        }
         footer a {
             color: #000;
             text-decoration: underline;
+        }
+        body.dark-mode footer a {
+            color: #e0e0e0;
         }
         .github-icon {
             width: 14px;
@@ -81,10 +140,119 @@
             margin-right: 4px;
             display: inline-block;
         }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .search-container {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 5px;
+            background: #fff;
+            border: 1px solid #000;
+            min-width: 200px;
+            max-width: 400px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        body.dark-mode .dropdown {
+            background: #2a2a2a;
+            border-color: #e0e0e0;
+        }
+        .dropdown.show {
+            display: block;
+        }
+        .dropdown-section {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        body.dark-mode .dropdown-section {
+            border-bottom-color: #444;
+        }
+        .dropdown-section:last-child {
+            border-bottom: none;
+        }
+        .dropdown-section h4 {
+            font-size: 12px;
+            margin: 0 0 8px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .dropdown-item {
+            display: block;
+            padding: 8px;
+            text-decoration: none;
+            color: #000;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        body.dark-mode .dropdown-item {
+            color: #e0e0e0;
+            border-bottom-color: #444;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-item:hover {
+            background: #f0f0f0;
+        }
+        body.dark-mode .dropdown-item:hover {
+            background: #3a3a3a;
+        }
+        .dropdown-item.empty {
+            color: #666;
+            font-style: italic;
+            cursor: default;
+        }
+        body.dark-mode .dropdown-item.empty {
+            color: #999;
+        }
+        .dropdown-item.empty:hover {
+            background: #fff;
+        }
+        body.dark-mode .dropdown-item.empty:hover {
+            background: #2a2a2a;
+        }
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid #000;
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 12px;
+            cursor: pointer;
+            background: #fff;
+            color: #000;
+        }
+        body.dark-mode .dark-mode-toggle {
+            border-color: #e0e0e0;
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        .dark-mode-toggle:hover {
+            background: #f0f0f0;
+        }
+        body.dark-mode .dark-mode-toggle:hover {
+            background: #3a3a3a;
+        }
         @media (max-width: 600px) {
             body {
                 padding: 10px;
                 margin: 20px auto;
+            }
+            .dark-mode-toggle {
+                position: static;
+                display: block;
+                margin: 10px 0;
+                width: auto;
             }
             input[type="text"] {
                 width: 100%;
@@ -104,19 +272,127 @@
     </style>
 </head>
 <body>
-    <h1>metarflow</h1>
-    <form action="/metar" method="get">
+    <button class="dark-mode-toggle" id="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+    <h1><a href="/" id="home-link" style="text-decoration: none; cursor: pointer;">metarflow</a></h1>
+    <form action="/metar" method="get" id="metar-form" onsubmit="handleSubmit(event)">
         <label for="icao">Enter airport ICAO code:</label>
-        <input type="text" id="icao" name="icao" placeholder="e.g., KJFK" maxlength="4" required>
-        <button type="submit">Fetch METAR</button>
+        <div class="search-container">
+            <input type="text" id="icao" name="icao" placeholder="e.g., KJFK" maxlength="4" required 
+                   oninput="this.value = this.value.toUpperCase()"
+                   onfocus="showDropdown()"
+                   onblur="setTimeout(() => hideDropdown(), 200)"
+                   onkeypress="if(event.key === 'Enter') { event.preventDefault(); handleSubmit(event); }">
+            <div id="dropdown" class="dropdown">
+                <div class="dropdown-section">
+                    <h4>Popular Airports</h4>
+                    <a href="/metar?icao=KJFK" class="dropdown-item" onclick="hideDropdown()">KJFK (JFK)</a>
+                    <a href="/metar?icao=EGLL" class="dropdown-item" onclick="hideDropdown()">EGLL (Heathrow)</a>
+                    <a href="/metar?icao=KLAX" class="dropdown-item" onclick="hideDropdown()">KLAX (LAX)</a>
+                    <a href="/metar?icao=KORD" class="dropdown-item" onclick="hideDropdown()">KORD (O'Hare)</a>
+                    <a href="/metar?icao=EDDF" class="dropdown-item" onclick="hideDropdown()">EDDF (Frankfurt)</a>
+                </div>
+                <div class="dropdown-section">
+                    <h4>Recent Searches</h4>
+                    <div id="recent-dropdown-list"></div>
+                </div>
+            </div>
+        </div>
+        <button type="submit" id="submit-btn">
+            Fetch METAR
+        </button>
     </form>
     <div class="info">
         <p>ICAO codes are 4 characters (e.g., KJFK, EGLL, YSSY)</p>
+        <p class="info-hint" style="font-size: 11px; color: #999;">Press Enter to search</p>
     </div>
     <footer>
         <p class="disclaimer">The information on this website is intended for educational purposes only. Not for operational use.</p>
         <p class="credits">Created by <a href="https://github.com/Balionelis/metarflow" target="_blank" rel="noopener noreferrer"><svg class="github-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Balionelis</a>. Licensed under <a href="https://github.com/Balionelis/metarflow/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0</a>. <a href="/privacy">Privacy</a>.</p>
     </footer>
+    <script>
+        function showDropdown() {
+            const dropdown = document.getElementById('dropdown');
+            dropdown.classList.add('show');
+            updateRecentSearches();
+        }
+        
+        function hideDropdown() {
+            const dropdown = document.getElementById('dropdown');
+            dropdown.classList.remove('show');
+        }
+        
+        function updateRecentSearches() {
+            const recent = JSON.parse(localStorage.getItem('metarflow_recent') || '[]');
+            const list = document.getElementById('recent-dropdown-list');
+            list.innerHTML = '';
+            
+            const recentLimited = recent.slice(0, 5);
+            
+            if (recentLimited.length > 0) {
+                recentLimited.forEach(icao => {
+                    const link = document.createElement('a');
+                    link.href = `/metar?icao=${icao}`;
+                    link.className = 'dropdown-item';
+                    link.textContent = icao;
+                    link.onclick = () => hideDropdown();
+                    list.appendChild(link);
+                });
+            } else {
+                const empty = document.createElement('div');
+                empty.className = 'dropdown-item empty';
+                empty.textContent = 'No recent searches';
+                list.appendChild(empty);
+            }
+        }
+        
+        function handleSubmit(event) {
+            hideDropdown();
+            const btn = document.getElementById('submit-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Loading...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 5000);
+            
+            return true;
+        }
+        
+        updateRecentSearches();
+        
+        // toggles dark mode
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark-mode');
+            const toggle = document.getElementById('dark-mode-toggle');
+            
+            if (isDark) {
+                localStorage.setItem('metarflow_dark_mode', 'true');
+                toggle.textContent = 'Light Mode';
+            } else {
+                localStorage.setItem('metarflow_dark_mode', 'false');
+                toggle.textContent = 'Dark Mode';
+            }
+        }
+        
+        // applies dark mode on page load
+        function initDarkMode() {
+            const savedMode = localStorage.getItem('metarflow_dark_mode');
+            const toggle = document.getElementById('dark-mode-toggle');
+            
+            if (savedMode === 'true') {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('dark-mode');
+                toggle.textContent = 'Dark Mode';
+            }
+        }
+        
+        initDarkMode();
+    </script>
 </body>
 </html>
 
