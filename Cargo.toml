@@ -7,7 +7,20 @@ license = "GPL-3.0"
 repository = "https://github.com/Balionelis/metarflow"
 
 [dependencies]
-axum = "0.7"
+axum = "0.8"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1"
+tower = "0.5"
+tower-layer = "0.3"
+vercel_runtime = { version = "2", features = ["axum"] }
+
+[[bin]]
+name = "axum"
+path = "api/axum.rs"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = 3
